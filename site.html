@@ -1,1 +1,569 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>Ehliyet Sistemi</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+margin:0;
+background:#111827;
+color:white;
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.box{
+background:#1f2937;
+padding:25px;
+width:90%;
+max-width:420px;
+border-radius:15px;
+box-shadow:0 0 20px #000;
+}
+
+h1{
+text-align:center;
+}
+
+input{
+width:100%;
+padding:12px;
+margin:8px 0;
+border-radius:8px;
+border:0;
+}
+
+button{
+width:100%;
+padding:12px;
+margin-top:10px;
+border:0;
+border-radius:8px;
+background:#2563eb;
+color:white;
+font-size:16px;
+cursor:pointer;
+}
+
+button:hover{
+background:#1d4ed8;
+}
+
+.link{
+text-align:center;
+margin-top:15px;
+color:#60a5fa;
+cursor:pointer;
+}
+
+.hidden{
+display:none;
+}
+
+.card{
+background:#374151;
+padding:15px;
+border-radius:10px;
+margin-top:10px;
+}
+
+.green{
+color:#22c55e;
+}
+
+.red{
+color:#ef4444;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="box">
+
+
+<!-- GİRİŞ -->
+
+<div id="loginPage">
+
+<h1>Giriş</h1>
+
+<input id="loginEmail" placeholder="E-posta">
+
+<input id="loginPassword" type="password" placeholder="Şifre">
+
+
+<button onclick="login()">
+Giriş Yap
+</button>
+
+
+<div class="link" onclick="showRegister()">
+Kayıt Ol
+</div>
+
+
+</div>
+
+
+
+
+<!-- KAYIT -->
+
+<div id="registerPage" class="hidden">
+
+<h1>Kayıt Ol</h1>
+
+
+<input id="registerName" placeholder="Ad Soyad">
+
+<input id="registerEmail" placeholder="E-posta">
+
+<input id="registerPassword" type="password" placeholder="Şifre">
+
+
+<button onclick="register()">
+Kayıt Ol
+</button>
+
+
+<div class="link" onclick="showLogin()">
+Girişe Dön
+</div>
+
+
+</div>
+
+
+
+
+
+<!-- KULLANICI -->
+
+<div id="userPage" class="hidden">
+
+<h1>Profil</h1>
+
+
+<div id="licenseStatus" class="card">
+Kontrol ediliyor...
+</div>
+
+
+<button onclick="logout()">
+Çıkış
+</button>
+
+
+</div>
+
+
+
+
+
+<!-- ADMİN -->
+
+<div id="adminPage" class="hidden">
+
+
+<h1>Admin Paneli</h1>
+
+
+<div id="usersList">
+
+</div>
+
+
+<button onclick="logout()">
+Çıkış
+</button>
+
+
+</div>
+
+
+
+
+</div>
+
+
+
+
+<script type="module">
+
+
+import { initializeApp } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+
+import { 
+getAuth,
+createUserWithEmailAndPassword,
+signInWithEmailAndPassword,
+signOut
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+
+import {
+
+getFirestore,
+doc,
+setDoc,
+getDoc,
+collection,
+getDocs,
+updateDoc
+
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyCW8PkCQHB_0QmuQwOvhFbek0tF5DBy9xo",
+
+authDomain: "neolurgeridon-6cc78.firebaseapp.com",
+
+projectId: "neolurgeridon-6cc78",
+
+storageBucket: "neolurgeridon-6cc78.firebasestorage.app",
+
+messagingSenderId: "320655655061",
+
+appId: "1:320655655061:web:341cd192e45d883f5b9b9c",
+
+measurementId: "G-SGRLZ92YFY"
+
+};
+
+
+
+const app = initializeApp(firebaseConfig);
+
+
+const auth=getAuth(app);
+
+
+const db=getFirestore(app);
+
+
+
+
+
+window.register=async()=>{
+
+
+let name=
+document.getElementById("registerName").value;
+
+
+let email=
+document.getElementById("registerEmail").value;
+
+
+let password=
+document.getElementById("registerPassword").value;
+
+
+
+try{
+
+
+let user=
+await createUserWithEmailAndPassword(
+auth,
+email,
+password
+);
+
+
+
+await setDoc(
+doc(db,"users",user.user.uid),
+{
+
+name:name,
+
+email:email,
+
+admin:false,
+
+ehliyet:false
+
+}
+
+);
+
+
+
+alert("Kayıt başarılı");
+
+
+showLogin();
+
+
+}catch(e){
+
+alert(e.message);
+
+}
+
+
+}
+
+
+
+
+
+window.login=async()=>{
+
+
+let email=
+document.getElementById("loginEmail").value;
+
+
+let password=
+document.getElementById("loginPassword").value;
+
+
+
+try{
+
+
+let result=
+await signInWithEmailAndPassword(
+auth,
+email,
+password
+);
+
+
+
+let userData=
+await getDoc(
+doc(db,"users",result.user.uid)
+);
+
+
+
+let data=userData.data();
+
+
+
+document.getElementById("loginPage")
+.classList.add("hidden");
+
+
+
+if(data.admin){
+
+
+document.getElementById("adminPage")
+.classList.remove("hidden");
+
+
+loadUsers();
+
+
+}else{
+
+
+document.getElementById("userPage")
+.classList.remove("hidden");
+
+
+
+if(data.ehliyet){
+
+document.getElementById("licenseStatus").innerHTML=
+"🟢 Ehliyeti Var";
+
+}else{
+
+document.getElementById("licenseStatus").innerHTML=
+"🔴 Ehliyeti Yok";
+
+}
+
+
+}
+
+
+
+}catch(e){
+
+alert("Giriş hatası: "+e.message);
+
+}
+
+
+}
+
+
+
+
+window.logout=()=>{
+
+
+signOut(auth);
+
+location.reload();
+
+
+}
+
+
+
+
+
+window.showRegister=()=>{
+
+loginPage.classList.add("hidden");
+
+registerPage.classList.remove("hidden");
+
+}
+
+
+
+window.showLogin=()=>{
+
+registerPage.classList.add("hidden");
+
+loginPage.classList.remove("hidden");
+
+}
+// =============================
+// ADMİN PANELİ
+// =============================
+
+
+window.loadUsers = async()=>{
+
+
+const usersDiv =
+document.getElementById("usersList");
+
+
+usersDiv.innerHTML="";
+
+
+const snapshot =
+await getDocs(collection(db,"users"));
+
+
+
+snapshot.forEach((user)=>{
+
+
+let data=user.data();
+
+
+if(data.admin) return;
+
+
+
+let div=document.createElement("div");
+
+
+div.className="card";
+
+
+div.innerHTML=`
+
+<b>${data.name}</b>
+<br>
+${data.email}
+
+<br><br>
+
+Durum:
+
+${
+data.ehliyet
+?
+"<span class='green'>🟢 Ehliyeti Var</span>"
+:
+"<span class='red'>🔴 Ehliyeti Yok</span>"
+}
+
+
+<button onclick="giveLicense('${user.id}',true)">
+Ehliyet Ver
+</button>
+
+
+<button onclick="giveLicense('${user.id}',false)">
+Ehliyeti Al
+</button>
+
+`;
+
+
+
+usersDiv.appendChild(div);
+
+
+
+});
+
+
+}
+
+
+
+
+
+window.giveLicense = async(uid,status)=>{
+
+
+await updateDoc(
+doc(db,"users",uid),
+{
+
+ehliyet:status
+
+}
+
+);
+
+
+
+alert(
+status
+?
+"Ehliyet verildi"
+:
+"Ehliyet alındı"
+);
+
+
+
+loadUsers();
+
+
+}
+
+</script>
+
+
+</body>
+</html>
